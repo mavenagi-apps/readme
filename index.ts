@@ -65,7 +65,7 @@ export default {
 
       for (const category of categories) {
         const knowledgeBase = await mavenAgi.knowledge.createKnowledgeBase({
-          displayName: 'Readme2: ' + category.title,
+          displayName: 'Readme: ' + category.title,
           type: MavenAGI.KnowledgeBaseType.Api,
           knowledgeBaseId: category.slug,
         });
