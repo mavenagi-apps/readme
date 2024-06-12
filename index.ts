@@ -21,12 +21,35 @@ async function callReadmeApi(path: string, token: string) {
   return response.json();
 }
 
+async function processDocsForCategory(mavenAgi, token, knowledgeBaseId) {
+  const docs = await callReadmeApi(
+    `/categories/${knowledgeBaseId}/docs`,
+    token
+  );
+
+  for (const doc of docs) {
+    await mavenAgi.knowledge.createKnowledgeDocument({
+      knowledgeBaseId,
+      title: doc.title,
+      content: doc.body,
+      documentId: doc.id,
+      language: doc.language || 'en',
+    });
+  }
+
+  await mavenAgi.knowledge.finalizeKnowledgeBaseVersion({
+    knowledgeBaseId: knowledgeBaseId,
+  });
+}
+
 export default {
   async preInstall({ settings }) {
     try {
       await callReadmeApi('/categories', settings.token);
     } catch (error) {
-      throw new Error('Invalid ReadMe authentication token.');
+      throw new Error(
+        'Invalid ReadMe authentication token. Token: ' + settings.token
+      );
     }
   },
 
@@ -40,29 +63,35 @@ export default {
         const knowledgeBase = await mavenAgi.knowledge.createKnowledgeBase({
           displayName: 'Readme: ' + category.title,
           type: MavenAGI.KnowledgeBaseType.Api,
-          knowledgeBaseId: `readme-${category.slug}`,
+          knowledgeBaseId: category.slug,
         });
-        const docs = await callReadmeApi(
-          `/categories/${category.slug}/docs`,
-          settings.token
+        await processDocsForCategory(
+          mavenAgi,
+          settings.token,
+          knowledgeBase.knowledgeBaseId
         );
-
-        for (const doc of docs) {
-          await mavenAgi.knowledge.createKnowledgeDocument({
-            knowledgeBaseId: knowledgeBase.knowledgeBaseId,
-            title: doc.title,
-            content: doc.body,
-            documentId: doc.id,
-            language: doc.language || 'en',
-          });
-        }
-
-        await mavenAgi.knowledge.finalizeKnowledgeBaseVersion({
-          knowledgeBaseId: knowledgeBase.knowledgeBaseId,
-        });
       }
     } catch (error) {
       console.error('Error during postInstall process:', error);
+    }
+  },
+
+  async knowledgeBaseRefresh({
+    organizationId,
+    agentId,
+    knowledgeBaseId,
+    settings,
+  }) {
+    const mavenAgi = new MavenAGIClient({ organizationId, agentId });
+
+    try {
+      await mavenAgi.knowledge.createKnowledgeBaseVersion({
+        knowledgeBaseId: knowledgeBaseId,
+        type: MavenAGI.KnowledgeBaseVersionType.Full,
+      });
+      await processDocsForCategory(mavenAgi, settings.token, knowledgeBaseId);
+    } catch (error) {
+      console.error('Error during knowledgeBaseRefresh process:', error);
     }
   },
 };
