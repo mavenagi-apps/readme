@@ -18,6 +18,8 @@ async function callReadmeApi(path: string, token: string) {
     );
   }
 
+  console.log('Successful readme api call for ' + endpoint);
+
   return response.json();
 }
 
@@ -28,12 +30,13 @@ async function processDocsForCategory(mavenAgi, token, knowledgeBaseId) {
   );
 
   for (const doc of docs) {
+    const fullReadmeDoc = await callReadmeApi(`/docs/${doc.slug}`, token);
+
     await mavenAgi.knowledge.createKnowledgeDocument({
       knowledgeBaseId,
-      title: doc.title,
-      content: doc.body,
-      documentId: doc.id,
-      language: doc.language || 'en',
+      title: fullReadmeDoc.title,
+      content: fullReadmeDoc.body,
+      documentId: doc.slug,
     });
   }
 
@@ -47,21 +50,22 @@ export default {
     try {
       await callReadmeApi('/categories', settings.token);
     } catch (error) {
-      throw new Error(
-        'Invalid ReadMe authentication token. Token: ' + settings.token
-      );
+      console.error('Invalid Readme token', error);
     }
   },
 
   async postInstall({ organizationId, agentId, settings }) {
-    const mavenAgi = new MavenAGIClient({ organizationId, agentId });
+    const mavenAgi = new MavenAGIClient({
+      organizationId,
+      agentId,
+    });
 
     try {
       const categories = await callReadmeApi('/categories', settings.token);
 
       for (const category of categories) {
         const knowledgeBase = await mavenAgi.knowledge.createKnowledgeBase({
-          displayName: 'Readme: ' + category.title,
+          displayName: 'Readme2: ' + category.title,
           type: MavenAGI.KnowledgeBaseType.Api,
           knowledgeBaseId: category.slug,
         });
