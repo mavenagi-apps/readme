@@ -1,14 +1,14 @@
-import { MavenAGIClient, MavenAGI } from 'mavenagi';
+import { MavenAGIClient, MavenAGI } from "mavenagi";
 
-const README_API_BASE_URL = 'https://dash.readme.com/api/v1';
+const README_API_BASE_URL = "https://dash.readme.com/api/v1";
 
 async function callReadmeApi(path: string, token: string) {
   const endpoint = `${README_API_BASE_URL}${path}`;
   const response = await fetch(endpoint, {
-    method: 'GET',
+    method: "GET",
     headers: {
       Authorization: `Basic ${token}`,
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
   });
 
@@ -18,7 +18,7 @@ async function callReadmeApi(path: string, token: string) {
     );
   }
 
-  console.log('Successful readme api call for ' + endpoint);
+  console.log("Successful readme api call for " + endpoint);
 
   return response.json();
 }
@@ -48,9 +48,9 @@ async function processDocsForCategory(mavenAgi, token, knowledgeBaseId) {
 export default {
   async preInstall({ settings }) {
     try {
-      await callReadmeApi('/categories', settings.token);
+      await callReadmeApi("/categories", settings.token);
     } catch (error) {
-      console.error('Invalid Readme token', error);
+      console.error("Invalid Readme token", error);
     }
   },
 
@@ -61,11 +61,11 @@ export default {
     });
 
     try {
-      const categories = await callReadmeApi('/categories', settings.token);
+      const categories = await callReadmeApi("/categories", settings.token);
 
       for (const category of categories) {
         const knowledgeBase = await mavenAgi.knowledge.createKnowledgeBase({
-          displayName: 'Readme: ' + category.title,
+          displayName: "Readme: " + category.title,
           type: MavenAGI.KnowledgeBaseType.Api,
           knowledgeBaseId: category.slug,
         });
@@ -76,7 +76,7 @@ export default {
         );
       }
     } catch (error) {
-      console.error('Error during postInstall process:', error);
+      console.error("Error during postInstall process:", error);
     }
   },
 
@@ -95,7 +95,7 @@ export default {
       });
       await processDocsForCategory(mavenAgi, settings.token, knowledgeBaseId);
     } catch (error) {
-      console.error('Error during knowledgeBaseRefresh process:', error);
+      console.error("Error during knowledgeBaseRefresh process:", error);
     }
   },
 };
