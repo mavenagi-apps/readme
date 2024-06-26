@@ -1,12 +1,5 @@
 {
-  "name": "readme-knowledge-app",
-  "scripts": {
-    "dev": "mavenagi-apps dev"
-  },
   "dependencies": {
     "mavenagi": "0.0.0-alpha.2"
-  },
-  "devDependencies": {
-    "@mavenagi/apps-cli": "0.0.0-alpha.11"
   }
 }

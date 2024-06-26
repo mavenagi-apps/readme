@@ -1,7 +1,0 @@
-{
-  "token": {
-    "type": "text",
-    "description": "Readme API token",
-    "displayName": "Token"
-  }
-}
