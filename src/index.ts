@@ -23,7 +23,11 @@ async function callReadmeApi(path: string, token: string) {
   return response.json();
 }
 
-async function processDocsForCategory(mavenAgi, token, knowledgeBaseId) {
+async function processDocsForCategory(
+  mavenAgi: MavenAGIClient,
+  token: string,
+  knowledgeBaseId: string
+) {
   const docs = await callReadmeApi(
     `/categories/${knowledgeBaseId}/docs`,
     token
@@ -47,6 +51,7 @@ async function processDocsForCategory(mavenAgi, token, knowledgeBaseId) {
 
 export default {
   async preInstall({ settings }) {
+    // Make sure the readme auth token works
     await callReadmeApi('/categories', settings.token);
   },
 
@@ -56,6 +61,8 @@ export default {
       agentId,
     });
 
+    // Make a maven knowledge base for each readme category
+    // We're using the readme category slug as the knowledge base id to make Readme API calls easy
     const categories = await callReadmeApi('/categories', settings.token);
 
     for (const category of categories) {
@@ -64,6 +71,8 @@ export default {
         type: MavenAGI.KnowledgeBaseType.Api,
         knowledgeBaseId: category.slug,
       });
+
+      // Add documents to the knowledge base
       await processDocsForCategory(
         mavenAgi,
         settings.token,
@@ -80,8 +89,9 @@ export default {
   }) {
     const mavenAgi = new MavenAGIClient({ organizationId, agentId });
 
+    // If we get a refresh request, create a new version for the knowledge base and add documents
     await mavenAgi.knowledge.createKnowledgeBaseVersion({
-      knowledgeBaseId: knowledgeBaseId,
+      knowledgeBaseId,
       type: MavenAGI.KnowledgeBaseVersionType.Full,
     });
     await processDocsForCategory(mavenAgi, settings.token, knowledgeBaseId);
