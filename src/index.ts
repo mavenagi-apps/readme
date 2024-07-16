@@ -1,4 +1,4 @@
-import { MavenAGIClient, MavenAGI } from 'mavenagi';
+import { MavenAGIClient } from 'mavenagi';
 
 const README_API_BASE_URL = 'https://dash.readme.com/api/v1';
 
@@ -36,17 +36,15 @@ async function processDocsForCategory(
   for (const doc of docs) {
     const fullReadmeDoc = await callReadmeApi(`/docs/${doc.slug}`, token);
 
-    await mavenAgi.knowledge.createKnowledgeDocument({
-      knowledgeBaseId,
+    await mavenAgi.knowledge.createKnowledgeDocument(knowledgeBaseId, {
       title: fullReadmeDoc.title,
       content: fullReadmeDoc.body,
-      documentId: doc.slug,
+      contentType: 'MARKDOWN',
+      knowledgeDocumentId: { referenceId: doc.slug },
     });
   }
 
-  await mavenAgi.knowledge.finalizeKnowledgeBaseVersion({
-    knowledgeBaseId: knowledgeBaseId,
-  });
+  await mavenAgi.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId);
 }
 
 export default {
@@ -66,17 +64,18 @@ export default {
     const categories = await callReadmeApi('/categories', settings.token);
 
     for (const category of categories) {
-      const knowledgeBase = await mavenAgi.knowledge.createKnowledgeBase({
-        displayName: 'Readme: ' + category.title,
-        type: MavenAGI.KnowledgeBaseType.Api,
-        knowledgeBaseId: category.slug,
-      });
+      const knowledgeBase =
+        await mavenAgi.knowledge.createOrUpdateKnowledgeBase({
+          name: 'Readme: ' + category.title,
+          type: 'API',
+          knowledgeBaseId: { referenceId: category.slug },
+        });
 
       // Add documents to the knowledge base
       await processDocsForCategory(
         mavenAgi,
         settings.token,
-        knowledgeBase.knowledgeBaseId
+        knowledgeBase.knowledgeBaseId.referenceId
       );
     }
   },
@@ -90,9 +89,8 @@ export default {
     const mavenAgi = new MavenAGIClient({ organizationId, agentId });
 
     // If we get a refresh request, create a new version for the knowledge base and add documents
-    await mavenAgi.knowledge.createKnowledgeBaseVersion({
-      knowledgeBaseId,
-      type: MavenAGI.KnowledgeBaseVersionType.Full,
+    await mavenAgi.knowledge.createKnowledgeBaseVersion(knowledgeBaseId, {
+      type: 'FULL',
     });
     await processDocsForCategory(mavenAgi, settings.token, knowledgeBaseId);
   },
