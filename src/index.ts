@@ -80,18 +80,27 @@ export default {
     }
   },
 
-  async knowledgeBaseRefresh({
+  async knowledgeBaseRefreshed({
     organizationId,
     agentId,
     knowledgeBaseId,
     settings,
   }) {
+    console.log('Refresh request for ' + knowledgeBaseId.referenceId);
+
     const mavenAgi = new MavenAGIClient({ organizationId, agentId });
 
     // If we get a refresh request, create a new version for the knowledge base and add documents
-    await mavenAgi.knowledge.createKnowledgeBaseVersion(knowledgeBaseId, {
-      type: 'FULL',
-    });
-    await processDocsForCategory(mavenAgi, settings.token, knowledgeBaseId);
+    await mavenAgi.knowledge.createKnowledgeBaseVersion(
+      knowledgeBaseId.referenceId,
+      {
+        type: 'FULL',
+      }
+    );
+    await processDocsForCategory(
+      mavenAgi,
+      settings.token,
+      knowledgeBaseId.referenceId
+    );
   },
 };
