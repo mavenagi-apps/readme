@@ -14,11 +14,11 @@ async function callReadmeApi(path: string, token: string) {
 
   if (!response.ok) {
     throw new Error(
-      `Failed to fetch data from ReadMe API. Endpoint: ${endpoint}`
+      `Failed to fetch data from Readme API. Endpoint: ${endpoint}`
     );
   }
 
-  console.log('Successful readme api call for ' + endpoint);
+  console.log('Successful Readme API call for ' + endpoint);
 
   return response.json();
 }
