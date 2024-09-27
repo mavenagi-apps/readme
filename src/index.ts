@@ -1,4 +1,4 @@
-import { MavenAGIClient } from 'mavenagi';
+import { MavenAGIClient, MavenAGI } from 'mavenagi';
 
 const README_API_BASE_URL = 'https://dash.readme.com/api/v1';
 
@@ -19,7 +19,6 @@ async function callReadmeApi(path: string, token: string) {
   }
 
   console.log('Successful Readme API call for ' + endpoint);
-
   return response.json();
 }
 
@@ -34,6 +33,7 @@ async function processDocsForCategory(
   );
 
   for (const doc of docs) {
+    // The docs in the category response do not contain all fields. So we must fetch the full doc.
     const fullReadmeDoc = await callReadmeApi(`/docs/${doc.slug}`, token);
 
     await mavenAgi.knowledge.createKnowledgeDocument(knowledgeBaseId, {
@@ -43,7 +43,36 @@ async function processDocsForCategory(
       knowledgeDocumentId: { referenceId: doc.slug },
     });
   }
+}
 
+async function refreshDocumentsFromReadme(
+  mavenAgi: MavenAGIClient,
+  token: string,
+  knowledgeBaseId: string
+) {
+  // Just in case we had a past failure, finalize any old versions so we can start from scratch
+  // TODO(maven): Make the platform more lenient so this isn't necessary
+  try {
+    await mavenAgi.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId);
+  } catch (error) {
+    // Ignored
+  }
+
+  // Make a new kb version
+  await mavenAgi.knowledge.createKnowledgeBaseVersion(knowledgeBaseId, {
+    type: 'FULL',
+  });
+
+  // Fetch and save all readme articles to the kb
+  // Readme only allows fetching docs from within a category so we loop over each one
+  const categories = await callReadmeApi('/categories', token);
+  for (const category of categories) {
+    await processDocsForCategory(mavenAgi, token, 'readme');
+    console.log('Finished processing category ' + category);
+  }
+
+  // Finalize the version
+  console.log('Finished processing all articles');
   await mavenAgi.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId);
 }
 
@@ -59,25 +88,13 @@ export default {
       agentId,
     });
 
-    // Make a maven knowledge base for each readme category
-    // We're using the readme category slug as the knowledge base id to make Readme API calls easy
-    const categories = await callReadmeApi('/categories', settings.token);
-
-    for (const category of categories) {
-      const knowledgeBase =
-        await mavenAgi.knowledge.createOrUpdateKnowledgeBase({
-          name: 'Readme: ' + category.title,
-          type: 'API',
-          knowledgeBaseId: { referenceId: category.slug },
-        });
-
-      // Add documents to the knowledge base
-      await processDocsForCategory(
-        mavenAgi,
-        settings.token,
-        knowledgeBase.knowledgeBaseId.referenceId
-      );
-    }
+    // Make one maven knowledge base for readme
+    await mavenAgi.knowledge.createOrUpdateKnowledgeBase({
+      name: 'ReadMe',
+      type: MavenAGI.KnowledgeBaseType.Api,
+      knowledgeBaseId: { referenceId: 'readme' },
+    });
+    await refreshDocumentsFromReadme(mavenAgi, settings.token, 'readme');
   },
 
   async knowledgeBaseRefreshed({
@@ -87,17 +104,10 @@ export default {
     settings,
   }) {
     console.log('Refresh request for ' + knowledgeBaseId.referenceId);
-
     const mavenAgi = new MavenAGIClient({ organizationId, agentId });
 
     // If we get a refresh request, create a new version for the knowledge base and add documents
-    await mavenAgi.knowledge.createKnowledgeBaseVersion(
-      knowledgeBaseId.referenceId,
-      {
-        type: 'FULL',
-      }
-    );
-    await processDocsForCategory(
+    await refreshDocumentsFromReadme(
       mavenAgi,
       settings.token,
       knowledgeBaseId.referenceId
