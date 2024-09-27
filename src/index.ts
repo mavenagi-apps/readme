@@ -25,12 +25,10 @@ async function callReadmeApi(path: string, token: string) {
 async function processDocsForCategory(
   mavenAgi: MavenAGIClient,
   token: string,
+  categoryId: string,
   knowledgeBaseId: string
 ) {
-  const docs = await callReadmeApi(
-    `/categories/${knowledgeBaseId}/docs`,
-    token
-  );
+  const docs = await callReadmeApi(`/categories/${categoryId}/docs`, token);
 
   for (const doc of docs) {
     // The docs in the category response do not contain all fields. So we must fetch the full doc.
@@ -67,8 +65,8 @@ async function refreshDocumentsFromReadme(
   // Readme only allows fetching docs from within a category so we loop over each one
   const categories = await callReadmeApi('/categories', token);
   for (const category of categories) {
-    await processDocsForCategory(mavenAgi, token, 'readme');
-    console.log('Finished processing category ' + category);
+    await processDocsForCategory(mavenAgi, token, category.slug, 'readme');
+    console.log('Finished processing category ' + category.slug);
   }
 
   // Finalize the version
