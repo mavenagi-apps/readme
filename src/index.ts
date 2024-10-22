@@ -42,7 +42,9 @@ async function processDocsForCategory(
     });
 
     // Readme also supports child docs
+
     const childDocs = fullReadmeDoc.children || [];
+    console.log(fullReadmeDoc);
     for (const childDoc of childDocs) {
       const fullChildReadmeDoc = await callReadmeApi(
         `/docs/${childDoc.slug}`,
