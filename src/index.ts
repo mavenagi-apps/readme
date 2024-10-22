@@ -42,9 +42,10 @@ async function processDocsForCategory(
     });
 
     // Readme also supports child docs
-
     const childDocs = fullReadmeDoc.children || [];
-    console.log(fullReadmeDoc);
+    if (childDocs.length > 0) {
+      console.log('Processing child documents ' + childDocs.length);
+    }
     for (const childDoc of childDocs) {
       const fullChildReadmeDoc = await callReadmeApi(
         `/docs/${childDoc.slug}`,
@@ -81,10 +82,20 @@ async function refreshDocumentsFromReadme(
 
   // Fetch and save all readme articles to the kb
   // Readme only allows fetching docs from within a category so we loop over each one
-  const categories = await callReadmeApi('/categories', token);
-  for (const category of categories) {
-    await processDocsForCategory(mavenAgi, token, category.slug, 'readme');
-    console.log('Finished processing category ' + category.slug);
+  let page = 1;
+  let hasMorePages = true;
+
+  while (hasMorePages) {
+    const categories = await callReadmeApi(
+      `/categories?perPage=100&page=${page}`,
+      token
+    );
+    for (const category of categories) {
+      await processDocsForCategory(mavenAgi, token, category.slug, 'readme');
+      console.log('Finished processing category ' + category.slug);
+    }
+    hasMorePages = categories.length > 0;
+    page++;
   }
 
   // Finalize the version
