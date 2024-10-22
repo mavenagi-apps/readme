@@ -40,6 +40,22 @@ async function processDocsForCategory(
       contentType: 'MARKDOWN',
       knowledgeDocumentId: { referenceId: doc.slug },
     });
+
+    // Readme also supports child docs
+    const childDocs = fullReadmeDoc.children || [];
+    for (const childDoc of childDocs) {
+      const fullChildReadmeDoc = await callReadmeApi(
+        `/docs/${childDoc.slug}`,
+        token
+      );
+
+      await mavenAgi.knowledge.createKnowledgeDocument(knowledgeBaseId, {
+        title: fullChildReadmeDoc.title,
+        content: fullChildReadmeDoc.body,
+        contentType: 'MARKDOWN',
+        knowledgeDocumentId: { referenceId: fullChildReadmeDoc.slug },
+      });
+    }
   }
 }
 
