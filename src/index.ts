@@ -34,14 +34,16 @@ async function processDocsForCategory(
     // The docs in the category response do not contain all fields. So we must fetch the full doc.
     const fullReadmeDoc = await callReadmeApi(`/docs/${doc.slug}`, token);
 
-    await mavenAgi.knowledge.createKnowledgeDocument(knowledgeBaseId, {
-      title: fullReadmeDoc.title,
-      content: fullReadmeDoc.body,
-      contentType: 'MARKDOWN',
-      knowledgeDocumentId: { referenceId: doc.slug },
-    });
+    if (fullReadmeDoc.body) {
+      await mavenAgi.knowledge.createKnowledgeDocument(knowledgeBaseId, {
+        title: fullReadmeDoc.title,
+        content: fullReadmeDoc.body,
+        contentType: 'MARKDOWN',
+        knowledgeDocumentId: { referenceId: doc.slug },
+      });
+    }
 
-    // Readme also supports child docs
+    // Readme maybe also supports child docs?
     const childDocs = fullReadmeDoc.children || [];
     if (childDocs.length > 0) {
       console.log('Processing child documents ' + childDocs.length);
