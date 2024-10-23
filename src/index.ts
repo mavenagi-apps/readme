@@ -42,25 +42,6 @@ async function processDocsForCategory(
         knowledgeDocumentId: { referenceId: doc.slug },
       });
     }
-
-    // Readme maybe also supports child docs?
-    const childDocs = fullReadmeDoc.children || [];
-    if (childDocs.length > 0) {
-      console.log('Processing child documents ' + childDocs.length);
-    }
-    for (const childDoc of childDocs) {
-      const fullChildReadmeDoc = await callReadmeApi(
-        `/docs/${childDoc.slug}`,
-        token
-      );
-
-      await mavenAgi.knowledge.createKnowledgeDocument(knowledgeBaseId, {
-        title: fullChildReadmeDoc.title,
-        content: fullChildReadmeDoc.body,
-        contentType: 'MARKDOWN',
-        knowledgeDocumentId: { referenceId: fullChildReadmeDoc.slug },
-      });
-    }
   }
 }
 
