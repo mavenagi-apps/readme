@@ -93,11 +93,13 @@ async function refreshDocumentsFromReadme(
 
 export default {
   async preInstall({ settings }) {
+    console.log('Pre-Install');
     // Make sure the readme auth token works
     await callReadmeApi('/categories', settings.token);
   },
 
   async postInstall({ organizationId, agentId, settings }) {
+    console.log('Installing organization: ', organizationId);
     const mavenAgi = new MavenAGIClient({
       organizationId,
       agentId,
