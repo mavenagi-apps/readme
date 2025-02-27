@@ -37,8 +37,6 @@ async function processDocsForCategory(
     // The docs in the category response do not contain all fields. So we must fetch the full doc.
     const fullReadmeDoc = await callReadmeApi(`/docs/${doc.slug}`, token);
 
-    console.log('Full Readme Doc: ', fullReadmeDoc);
-
     if (fullReadmeDoc.body) {
       await mavenAgi.knowledge.createKnowledgeDocument(knowledgeBaseId, {
         title: fullReadmeDoc.title,
@@ -78,6 +76,7 @@ async function refreshDocumentsFromReadme(
       `/categories?perPage=100&page=${page}`,
       token
     );
+    console.log('Categories: ', categories);
     for (const category of categories) {
       await processDocsForCategory(mavenAgi, token, category.slug, 'readme');
       console.log('Finished processing category ' + category.slug);
