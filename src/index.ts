@@ -47,6 +47,7 @@ async function processDocsForCategory(
     }
 
     for (const child of doc.children) {
+      console.log('Child: ', child);
       const fullReadmeChild = await callReadmeApi(`/docs/${child.slug}`, token);
 
       if (fullReadmeChild.body) {
