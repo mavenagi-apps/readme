@@ -45,6 +45,20 @@ async function processDocsForCategory(
         knowledgeDocumentId: { referenceId: doc.slug },
       });
     }
+
+    for (const child of doc.children) {
+      const fullReadmeChild = await callReadmeApi(`/docs/${child.slug}`, token);
+
+      if (fullReadmeChild.body) {
+        await mavenAgi.knowledge.createKnowledgeDocument(knowledgeBaseId, {
+          title: fullReadmeChild.title,
+          content: fullReadmeChild.body,
+          contentType: 'MARKDOWN',
+          knowledgeDocumentId: { referenceId: child.slug },
+        });
+      }
+    }
+
   }
 }
 
