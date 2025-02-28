@@ -1,65 +1,82 @@
 import { MavenAGIClient, MavenAGI } from 'mavenagi';
+import Bottleneck from 'bottleneck';
 
 const README_API_BASE_URL = 'https://dash.readme.com/api/v1';
 
+const limiter = new Bottleneck({
+  minTime: 200, // 200ms minimum time between requests
+  maxConcurrent: 1, // Allow up to 1 concurrent API calls
+});
+
+
 async function callReadmeApi(path: string, token: string) {
   const endpoint = `${README_API_BASE_URL}${path}`;
-  const response = await fetch(endpoint, {
-    method: 'GET',
-    headers: {
-      Authorization: `Basic ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
 
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch data from Readme API. Endpoint: ${endpoint}`
-    );
-  }
+  return limiter.schedule(async () => {
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        Authorization: `Basic ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-  console.log('Successful Readme API call for ' + endpoint);
-  return response.json();
+    if (!response.ok) {
+      throw new Error(
+          `Failed to fetch data from Readme API. Endpoint: ${endpoint}`
+      );
+    }
+
+    console.log('Successful Readme API call for ' + endpoint);
+    return response.json();
+  })
 }
 
 async function processDocsForCategory(
-  mavenAgi: MavenAGIClient,
-  token: string,
-  categoryId: string,
-  knowledgeBaseId: string
+    mavenAgi: MavenAGIClient,
+    token: string,
+    categoryId: string,
+    knowledgeBaseId: string
 ) {
   const docs = await callReadmeApi(`/categories/${categoryId}/docs`, token);
+  console.log('Processing documents in category:', categoryId);
 
-  console.log('Docs: ', docs);
+  for (const document of docs) {
+    await processDocumentWithChildren(document, token, mavenAgi, knowledgeBaseId);
+  }
+}
 
-  for (const doc of docs) {
-    console.log('Document: ', doc);
-    // The docs in the category response do not contain all fields. So we must fetch the full doc.
-    const fullReadmeDoc = await callReadmeApi(`/docs/${doc.slug}`, token);
+async function processDocumentWithChildren(
+    document: any,
+    token: string,
+    mavenAgi: MavenAGIClient,
+    knowledgeBaseId: string
+) {
+  // Process main document
+  await processDoc(document, token, mavenAgi, knowledgeBaseId);
 
-    if (fullReadmeDoc.body) {
-      await mavenAgi.knowledge.createKnowledgeDocument(knowledgeBaseId, {
-        title: fullReadmeDoc.title,
-        content: fullReadmeDoc.body,
-        contentType: 'MARKDOWN',
-        knowledgeDocumentId: { referenceId: doc.slug },
-      });
-    }
+  // Process child documents
+  for (const childDocument of document.children) {
+    await processDoc(childDocument, token, mavenAgi, knowledgeBaseId);
+  }
+}
 
-    for (const child of doc.children) {
-      console.log('Child: ', child);
-      const fullReadmeChild = await callReadmeApi(`/docs/${child.slug}`, token);
-
-      if (fullReadmeChild.body) {
-        await mavenAgi.knowledge.createKnowledgeDocument(knowledgeBaseId, {
-          title: fullReadmeChild.title,
-          content: fullReadmeChild.body,
-          contentType: 'MARKDOWN',
-          knowledgeDocumentId: { referenceId: child.slug },
-        });
-      }
-    }
-
+async function processDoc(
+    doc: any,
+    token: string,
+    mavenAgi: MavenAGIClient,
+    knowledgeBaseId: string
+) {
+  // The docs in the category response do not contain all fields. So we must fetch the full doc.
+  const fullReadmeDoc = await callReadmeApi(`/docs/${doc.slug}`, token);
+  if (fullReadmeDoc.body) {
+    console.log('Creating knowledge document for:', fullReadmeDoc.title);
+    await mavenAgi.knowledge.createKnowledgeDocument(knowledgeBaseId, {
+      title: fullReadmeDoc.title,
+      content: fullReadmeDoc.body,
+      contentType: 'MARKDOWN',
+      knowledgeDocumentId: { referenceId: doc.slug },
+    });
   }
 }
 
