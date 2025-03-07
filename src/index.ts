@@ -1,126 +1,6 @@
 import { MavenAGIClient, MavenAGI } from 'mavenagi';
-import Bottleneck from 'bottleneck';
-
-const README_API_BASE_URL = 'https://dash.readme.com/api/v1';
-
-const limiter = new Bottleneck({
-  minTime: 200, // 200ms minimum time between requests
-  maxConcurrent: 1, // Allow up to 1 concurrent API calls
-});
-
-
-async function callReadmeApi(path: string, token: string) {
-  const endpoint = `${README_API_BASE_URL}${path}`;
-
-  return limiter.schedule(async () => {
-    const response = await fetch(endpoint, {
-      method: 'GET',
-      headers: {
-        Authorization: `Basic ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(
-          `Failed to fetch data from Readme API. Endpoint: ${endpoint}`
-      );
-    }
-
-    console.log('Successful Readme API call for ' + endpoint);
-    return response.json();
-  })
-}
-
-async function processDocsForCategory(
-    mavenAgi: MavenAGIClient,
-    token: string,
-    categoryId: string,
-    knowledgeBaseId: string
-) {
-  const docs = await callReadmeApi(`/categories/${categoryId}/docs`, token);
-  console.log('Processing documents in category:', categoryId);
-
-  for (const document of docs) {
-    await processDocumentWithChildren(document, token, mavenAgi, knowledgeBaseId);
-  }
-}
-
-async function processDocumentWithChildren(
-    document: any,
-    token: string,
-    mavenAgi: MavenAGIClient,
-    knowledgeBaseId: string
-) {
-  // Process main document
-  await processDoc(document, token, mavenAgi, knowledgeBaseId);
-
-  // Process child documents
-  for (const childDocument of document.children) {
-    await processDoc(childDocument, token, mavenAgi, knowledgeBaseId);
-  }
-}
-
-async function processDoc(
-    doc: any,
-    token: string,
-    mavenAgi: MavenAGIClient,
-    knowledgeBaseId: string
-) {
-  // The docs in the category response do not contain all fields. So we must fetch the full doc.
-  const fullReadmeDoc = await callReadmeApi(`/docs/${doc.slug}`, token);
-  if (fullReadmeDoc.body) {
-    console.log('Creating knowledge document for:', fullReadmeDoc.title);
-    await mavenAgi.knowledge.createKnowledgeDocument(knowledgeBaseId, {
-      title: fullReadmeDoc.title,
-      content: fullReadmeDoc.body,
-      contentType: 'MARKDOWN',
-      knowledgeDocumentId: { referenceId: doc.slug },
-    });
-  }
-}
-
-async function refreshDocumentsFromReadme(
-  mavenAgi: MavenAGIClient,
-  token: string,
-  knowledgeBaseId: string
-) {
-  // Just in case we had a past failure, finalize any old versions so we can start from scratch
-  // TODO(maven): Make the platform more lenient so this isn't necessary
-  try {
-    await mavenAgi.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId);
-  } catch (error) {
-    // Ignored
-  }
-
-  // Make a new kb version
-  await mavenAgi.knowledge.createKnowledgeBaseVersion(knowledgeBaseId, {
-    type: 'FULL',
-  });
-
-  // Fetch and save all readme articles to the kb
-  // Readme only allows fetching docs from within a category so we loop over each one
-  let page = 1;
-  let hasMorePages = true;
-
-  while (hasMorePages) {
-    const categories = await callReadmeApi(
-      `/categories?perPage=100&page=${page}`,
-      token
-    );
-    console.log('Categories: ', categories);
-    for (const category of categories) {
-      await processDocsForCategory(mavenAgi, token, category.slug, 'readme');
-      console.log('Finished processing category ' + category.slug);
-    }
-    hasMorePages = categories.length > 0;
-    page++;
-  }
-
-  // Finalize the version
-  console.log('Finished processing all articles');
-  await mavenAgi.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId);
-}
+import {inngest} from "./inngest/client";
+import { callReadmeApi } from "./utils";
 
 export default {
   async preInstall({ settings }) {
@@ -142,7 +22,16 @@ export default {
       type: MavenAGI.KnowledgeBaseType.Api,
       knowledgeBaseId: { referenceId: 'readme' },
     });
-    await refreshDocumentsFromReadme(mavenAgi, settings.token, 'readme');
+
+    await inngest.send({
+      name: 'app/readme/process',
+      data: {
+        organizationId,
+        agentId,
+        settings,
+        knowledgeBaseId: 'readme'
+      }
+    })
   },
 
   async knowledgeBaseRefreshed({
@@ -155,10 +44,14 @@ export default {
     const mavenAgi = new MavenAGIClient({ organizationId, agentId });
 
     // If we get a refresh request, create a new version for the knowledge base and add documents
-    await refreshDocumentsFromReadme(
-      mavenAgi,
-      settings.token,
-      knowledgeBaseId.referenceId
-    );
+    await inngest.send({
+      name: 'app/readme/process',
+      data: {
+        organizationId,
+        agentId,
+        settings,
+        knowledgeBaseId: 'readme'
+      }
+    })
   },
 };
