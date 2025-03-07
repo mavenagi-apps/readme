@@ -16,7 +16,7 @@ export default {
       agentId,
     });
 
-    // Make one maven knowledge base for readme
+    // Make one maven knowledge base for readme-develop
     await mavenAgi.knowledge.createOrUpdateKnowledgeBase({
       name: 'ReadMe',
       type: MavenAGI.KnowledgeBaseType.Api,
