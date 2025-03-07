@@ -41,24 +41,25 @@ export const processFunction = inngest.createFunction(
         const categories = await step.run('process-categories', async () => {
             let page = 1;
             let hasMorePages = true;
-            let categories = [];
+            let fetchedCategories = [];
 
             while (hasMorePages) {
                 console.log('Fetching categories page', page);
-                categories = await callReadmeApi(
+                fetchedCategories = await callReadmeApi(
                     `/categories?perPage=100&page=${page}`,
                     settings.token
                 );
                 console.log('Categories: ', categories);
-                hasMorePages = categories.length > 0;
+                hasMorePages = fetchedCategories.length > 0;
                 page++;
             }
-            console.log('Processed categories: ', categories);
-            return categories;
+            console.log('Processed categories: ', fetchedCategories);
+            return fetchedCategories;
         })
 
 
         // Process documents
+        console.log('Processing documents', categories);
         if (categories.length === 0) {
             throw new Error('No categories found');
         } else {
