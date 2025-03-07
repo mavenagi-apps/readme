@@ -49,7 +49,7 @@ export const processFunction = inngest.createFunction(
                     `/categories?perPage=100&page=${page}`,
                     settings.token
                 );
-                console.log('Categories: ', categories);
+                console.log('Categories: ', fetchedCategories);
                 hasMorePages = fetchedCategories.length > 0;
                 page++;
             }
