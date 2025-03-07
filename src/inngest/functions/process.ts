@@ -44,10 +44,12 @@ export const processFunction = inngest.createFunction(
             let categories = [];
 
             while (hasMorePages) {
+                console.log('Fetching categories page', page);
                 categories = await callReadmeApi(
                     `/categories?perPage=100&page=${page}`,
                     settings.token
                 );
+                console.log('Categories: ', categories);
                 hasMorePages = categories.length > 0;
                 page++;
             }

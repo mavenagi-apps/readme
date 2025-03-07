@@ -20,6 +20,7 @@ export async function callReadmeApi(path: string, token: string) {
     }
 
     console.log('Successful Readme API call for ' + endpoint);
+    console.log('Response:', response);
     return response.json();
 }
 
