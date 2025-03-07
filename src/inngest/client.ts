@@ -2,9 +2,9 @@ import { EventSchemas, Inngest } from "inngest";
 import { z } from "zod";
 
 export const inngest = new Inngest({
-    id: "app/readme",
+    id: "app/readme-develop",
     schemas: new EventSchemas().fromZod({
-        "app/readme/process": {
+        "app/readme-develop/process": {
             data: z.object({
                 organizationId: z.string(),
                 agentId: z.string(),

@@ -24,7 +24,7 @@ export default {
     });
 
     await inngest.send({
-      name: 'app/readme/process',
+      name: 'app/readme-develop/process',
       data: {
         organizationId,
         agentId,
@@ -44,7 +44,7 @@ export default {
 
     // If we get a refresh request, create a new version for the knowledge base and add documents
     await inngest.send({
-      name: 'app/readme/process',
+      name: 'app/readme-develop/process',
       data: {
         organizationId,
         agentId,

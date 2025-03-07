@@ -7,7 +7,7 @@ export const processFunction = inngest.createFunction(
         id: "process",
     },
     {
-        event: "app/readme/process",
+        event: "app/readme-develop/process",
         concurrency: [
             {
                 key: "event.data.agentId",
