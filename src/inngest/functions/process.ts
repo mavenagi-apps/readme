@@ -45,12 +45,13 @@ export const processFunction = inngest.createFunction(
 
             while (hasMorePages) {
                 console.log('Fetching categories page', page);
-                fetchedCategories = await callReadmeApi(
+                const res: [] = await callReadmeApi(
                     `/categories?perPage=100&page=${page}`,
                     settings.token
                 );
+                fetchedCategories.push(...res);
                 console.log('Categories: ', fetchedCategories);
-                hasMorePages = fetchedCategories.length > 0;
+                hasMorePages = res.length > 0;
                 page++;
             }
             console.log('Processed categories: ', fetchedCategories);
