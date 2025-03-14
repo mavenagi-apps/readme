@@ -1,13 +1,14 @@
 import {inngest} from "../client";
 import {MavenAGIClient} from 'mavenagi';
-import {callReadmeApi, processDocsForCategory} from "../../utils";
+import {callReadmeApi, processDocsForCategory} from "../readme"
+import {INNGEST_EVENT} from "../constants";
 
 export const processFunction = inngest.createFunction(
     {
         id: "process",
     },
     {
-        event: "app/readme-develop/process",
+        event: INNGEST_EVENT,
         concurrency: [
             {
                 key: "event.data.agentId",

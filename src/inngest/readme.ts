@@ -1,6 +1,6 @@
 import {MavenAGIClient} from "mavenagi";
+import {README_API_BASE_URL} from "./constants";
 
-const README_API_BASE_URL = 'https://dash.readme.com/api/v1';
 
 export async function callReadmeApi(path: string, token: string) {
     const endpoint = `${README_API_BASE_URL}${path}`;

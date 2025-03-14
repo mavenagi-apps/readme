@@ -1,6 +1,7 @@
-import { MavenAGIClient, MavenAGI } from 'mavenagi';
+import {MavenAGIClient, MavenAGI} from 'mavenagi';
 import {inngest} from "./inngest/client";
-import { callReadmeApi } from "./utils";
+import {callReadmeApi} from "./inngest/readme";
+import {INNGEST_EVENT} from "./inngest/constants";
 
 export default {
   async preInstall({ settings }) {
@@ -24,7 +25,7 @@ export default {
     });
 
     await inngest.send({
-      name: 'app/readme-develop/process',
+      name: INNGEST_EVENT,
       data: {
         organizationId,
         agentId,
@@ -44,7 +45,7 @@ export default {
 
     // If we get a refresh request, create a new version for the knowledge base and add documents
     await inngest.send({
-      name: 'app/readme-develop/process',
+      name: INNGEST_EVENT,
       data: {
         organizationId,
         agentId,
