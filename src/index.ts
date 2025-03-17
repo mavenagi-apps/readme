@@ -1,7 +1,7 @@
 import {MavenAGIClient, MavenAGI} from 'mavenagi';
-import {inngest} from "./inngest/client";
-import {callReadmeApi} from "./inngest/readme";
-import {INNGEST_EVENT} from "./inngest/constants";
+import {inngest} from "@inngest/client";
+import {callReadmeApi} from "@inngest/readme";
+import {INNGEST_EVENT, KNOWLEDGE_BASE_ID} from "@inngest/constants";
 
 export default {
   async preInstall({ settings }) {
@@ -21,7 +21,7 @@ export default {
     await mavenAgi.knowledge.createOrUpdateKnowledgeBase({
       name: 'ReadMe',
       type: MavenAGI.KnowledgeBaseType.Api,
-      knowledgeBaseId: { referenceId: 'readme' },
+      knowledgeBaseId: { referenceId: KNOWLEDGE_BASE_ID },
     });
 
     await inngest.send({
@@ -30,7 +30,7 @@ export default {
         organizationId,
         agentId,
         settings,
-        knowledgeBaseId: 'readme'
+        knowledgeBaseId: KNOWLEDGE_BASE_ID
       }
     })
   },
@@ -50,7 +50,7 @@ export default {
         organizationId,
         agentId,
         settings,
-        knowledgeBaseId: 'readme'
+        knowledgeBaseId: KNOWLEDGE_BASE_ID
       }
     })
   },

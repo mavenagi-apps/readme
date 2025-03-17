@@ -1,6 +1,6 @@
 import { serve } from "inngest/next";
-import { inngest } from "../../../inngest/client";
-import { processFunction } from "../../../inngest/functions/process";
+import { inngest } from "@/inngest/client";
+import { processFunction } from "@inngest/functions/process";
 
 export const maxDuration = 900;
 

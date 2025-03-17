@@ -1,7 +1,7 @@
-import {inngest} from "../client";
+import {inngest} from "@inngest/client";
 import {MavenAGIClient} from 'mavenagi';
-import {callReadmeApi, processDocsForCategory} from "../readme"
-import {INNGEST_EVENT} from "../constants";
+import {callReadmeApi, processDocsForCategory} from "@inngest/readme"
+import {INNGEST_EVENT} from "@inngest/constants";
 
 export const processFunction = inngest.createFunction(
     {

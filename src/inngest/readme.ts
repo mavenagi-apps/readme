@@ -1,5 +1,5 @@
 import {MavenAGIClient} from "mavenagi";
-import {README_API_BASE_URL} from "./constants";
+import {README_API_BASE_URL} from "@inngest/constants";
 
 
 export async function callReadmeApi(path: string, token: string) {
