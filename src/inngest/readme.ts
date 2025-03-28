@@ -24,9 +24,21 @@ export async function callReadmeApi(path: string, token: string) {
     return response.json();
 }
 
+export async function getProjectBaseUrl(token: string) {
+    // No path returns the metadata for the specified project token
+    const metadata = await callReadmeApi('', token);
+    return metadata.baseUrl;
+}
+
+function getDocUrlForSlug(baseUrl: string, slug: string) {
+    // The slug is the path to the document
+    return `${baseUrl}/docs/${slug}`;
+}
+
 export async function processDocsForCategory(
     mavenAgi: MavenAGIClient,
     token: string,
+    baseDocUrl: string,
     categoryId: string,
     knowledgeBaseId: string
 ) {
@@ -34,28 +46,30 @@ export async function processDocsForCategory(
     console.log('Processing documents in category:', categoryId);
 
     for (const document of docs) {
-        await processDocumentWithChildren(document, token, mavenAgi, knowledgeBaseId);
+        await processDocumentWithChildren(document, token, baseDocUrl, mavenAgi, knowledgeBaseId);
     }
 }
 
 export async function processDocumentWithChildren(
     document: any,
     token: string,
+    baseDocUrl: string,
     mavenAgi: MavenAGIClient,
     knowledgeBaseId: string
 ) {
     // Process main document
-    await processDoc(document, token, mavenAgi, knowledgeBaseId);
+    await processDoc(document, token, baseDocUrl, mavenAgi, knowledgeBaseId);
 
     // Process child documents
     for (const childDocument of document.children) {
-        await processDoc(childDocument, token, mavenAgi, knowledgeBaseId);
+        await processDoc(childDocument, token, baseDocUrl, mavenAgi, knowledgeBaseId);
     }
 }
 
 export async function processDoc(
     doc: any,
     token: string,
+    baseDocUrl: string,
     mavenAgi: MavenAGIClient,
     knowledgeBaseId: string
 ) {
@@ -67,6 +81,7 @@ export async function processDoc(
             title: fullReadmeDoc.title,
             content: fullReadmeDoc.body,
             contentType: 'MARKDOWN',
+            url: getDocUrlForSlug(baseDocUrl, doc.slug),
             knowledgeDocumentId: { referenceId: doc.slug },
         });
     }

@@ -1,6 +1,6 @@
 import {inngest} from "@inngest/client";
 import {MavenAGIClient} from 'mavenagi';
-import {callReadmeApi, processDocsForCategory} from "@inngest/readme"
+import {getProjectBaseUrl, callReadmeApi, processDocsForCategory} from "@inngest/readme"
 import {INNGEST_EVENT} from "@inngest/constants";
 
 export const processFunction = inngest.createFunction(
@@ -19,6 +19,7 @@ export const processFunction = inngest.createFunction(
     async ({ event, step }) => {
         const { organizationId, agentId, settings, knowledgeBaseId } = event.data;
         const platform = new MavenAGIClient({ organizationId, agentId });
+        const baseProjectUrl = await getProjectBaseUrl(settings.token);
 
         // Just in case we had a past failure, finalize any old versions so we can start from scratch
         // TODO(maven): Make the platform more lenient so this isn't necessary
@@ -68,7 +69,7 @@ export const processFunction = inngest.createFunction(
             for (const category of categories) {
                 await step.run('process-documents', async () => {
                     const { slug }: any = category;
-                    await processDocsForCategory(platform, settings.token, slug, knowledgeBaseId);
+                    await processDocsForCategory(platform, settings.token, baseProjectUrl, slug, knowledgeBaseId);
                 })
             }
         }
