@@ -77,9 +77,12 @@ export async function processDoc(
     const fullReadmeDoc = await callReadmeApi(`/docs/${doc.slug}`, token);
     if (fullReadmeDoc.body) {
         console.log('Creating knowledge document for:', fullReadmeDoc.title);
+        const body = fullReadmeDoc.body || "";
+        const api = fullReadmeDoc.api || {};
+        const content = `${body}${api ? `\n\n${JSON.stringify(api)}`: ""}`;
         await mavenAgi.knowledge.createKnowledgeDocument(knowledgeBaseId, {
             title: fullReadmeDoc.title,
-            content: fullReadmeDoc.body,
+            content: content,
             contentType: 'MARKDOWN',
             url: getDocUrlForSlug(baseDocUrl, doc.slug),
             knowledgeDocumentId: { referenceId: doc.slug },
