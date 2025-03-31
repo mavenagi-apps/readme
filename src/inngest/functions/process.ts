@@ -18,14 +18,14 @@ export const processFunction = inngest.createFunction(
     },
     async ({ event, step }) => {
         const { organizationId, agentId, settings, knowledgeBaseId } = event.data;
-        const platform = new MavenAGIClient({ organizationId, agentId });
+        const mavenClient = new MavenAGIClient({ organizationId, agentId });
         const baseProjectUrl = await getProjectBaseUrl(settings.token);
 
         // Just in case we had a past failure, finalize any old versions so we can start from scratch
         // TODO(maven): Make the platform more lenient so this isn't necessary
         await step.run('finalize-knowledge-base-version', async () => {
             try {
-                await platform.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId);
+                await mavenClient.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId);
             } catch (error) {
                 // Ignored
             }
@@ -33,7 +33,7 @@ export const processFunction = inngest.createFunction(
 
         // Make a new kb version
         await step.run('create-knowledge-base-version', async () => {
-            await platform.knowledge.createKnowledgeBaseVersion(knowledgeBaseId, {
+            await mavenClient.knowledge.createKnowledgeBaseVersion(knowledgeBaseId, {
                 type: 'FULL',
             });
         })
@@ -69,7 +69,7 @@ export const processFunction = inngest.createFunction(
             for (const category of categories) {
                 await step.run('process-documents', async () => {
                     const { slug }: any = category;
-                    await processDocsForCategory(platform, settings.token, baseProjectUrl, slug, knowledgeBaseId);
+                    await processDocsForCategory(settings.token, baseProjectUrl, slug, mavenClient, knowledgeBaseId);
                 })
             }
         }
@@ -77,7 +77,7 @@ export const processFunction = inngest.createFunction(
         // Finalize the version
         await step.run('finalize-knowledge-base-version-final', async () => {
             console.log('Finished processing all articles');
-            await platform.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId);
+            await mavenClient.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId);
         })
     }
 );
