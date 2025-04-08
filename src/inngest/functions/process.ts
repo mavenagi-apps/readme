@@ -9,7 +9,7 @@ import {
 import { INNGEST_EVENT } from '@inngest/constants';
 
 // How many documents per Inngest step
-const README_PAGE_SIZE = 50;
+const README_PAGE_SIZE = 25;
 
 export const processFunction = inngest.createFunction(
   {
