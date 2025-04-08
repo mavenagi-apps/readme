@@ -78,7 +78,7 @@ export async function getDocsForCategory(token: string, categorySlug: string) {
   return docs;
 }
 
-export async function processDocumentWithChildren(
+export async function processDocument(
   document: any,
   token: string,
   baseDocUrl: string,
@@ -88,13 +88,13 @@ export async function processDocumentWithChildren(
   // Process main document
   await processDoc(document, token, baseDocUrl, mavenAgi, knowledgeBaseId);
 
-  // Process child documents
+  // Process child documents, recursively.
   for (const childDocument of document.children) {
-    await processDoc(childDocument, token, baseDocUrl, mavenAgi, knowledgeBaseId);
+    await processDocument(childDocument, token, baseDocUrl, mavenAgi, knowledgeBaseId);
   }
 }
 
-export async function processDoc(
+async function processDoc(
   doc: any,
   token: string,
   baseDocUrl: string,

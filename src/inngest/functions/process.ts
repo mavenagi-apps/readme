@@ -5,7 +5,7 @@ import {
   getProjectBaseUrl,
   callReadmeApi,
   getDocsForCategory,
-  processDocumentWithChildren,
+  processDocument,
 } from '@inngest/readme';
 import { INNGEST_EVENT } from '@inngest/constants';
 
@@ -84,7 +84,7 @@ export const processFunction = inngest.createFunction(
             docs.map((doc) => {
               return limiter.schedule(
                 async () =>
-                  await processDocumentWithChildren(
+                  await processDocument(
                     doc,
                     settings.token,
                     baseProjectUrl,
