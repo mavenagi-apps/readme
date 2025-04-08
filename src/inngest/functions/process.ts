@@ -9,8 +9,6 @@ import {
 } from '@inngest/readme';
 import { INNGEST_EVENT } from '@inngest/constants';
 
-// How many documents per Inngest step
-const README_PAGE_SIZE = 15;
 const BOTTLENECK_MAX_CONCURRENT = 16;
 const BOTTLENECK_MIN_TIME = 5;
 
