@@ -73,22 +73,18 @@ export const processFunction = inngest.createFunction(
         const docs = await step.run(`fetch-category-docs-${slug}`, async () => {
           return await getDocsForCategory(settings.token, slug);
         });
-        for (let i = 0; i < docs.length; i += README_PAGE_SIZE) {
-          const start = i,
-            end = i + Math.min(docs.length, README_PAGE_SIZE);
-          await step.run(`process-documents-${slug}-${start}-${end}`, async () => {
-            const page = docs.slice(start, end);
-            for (const doc of page) {
-              await processDocumentWithChildren(
-                doc,
-                settings.token,
-                baseProjectUrl,
-                mavenClient,
-                knowledgeBaseId
-              );
-            }
-          });
-        }
+
+        await step.run(`process-documents-${slug}-0-${docs.length}`, async () => {
+          for (const doc of docs) {
+            await processDocumentWithChildren(
+              doc,
+              settings.token,
+              baseProjectUrl,
+              mavenClient,
+              knowledgeBaseId
+            );
+          }
+        });
       }
     }
 
