@@ -9,7 +9,7 @@ import {
 import { INNGEST_EVENT } from '@inngest/constants';
 
 // How many documents per Inngest step
-const README_PAGE_SIZE = 25;
+const README_PAGE_SIZE = 15;
 
 export const processFunction = inngest.createFunction(
   {
@@ -66,14 +66,16 @@ export const processFunction = inngest.createFunction(
 
     // Process each category
     if (categories.length === 0) {
-      throw new Error('No categories found');
+      console.log('No categories found');
     } else {
       for (const category of categories) {
         const { slug }: any = category;
-        const docs = await getDocsForCategory(settings.token, slug);
+        const docs = await step.run(`fetch-category-docs-${slug}`, async () => {
+          return await getDocsForCategory(settings.token, slug);
+        });
         for (let i = 0; i < docs.length; i += README_PAGE_SIZE) {
           const start = i,
-            end = i + README_PAGE_SIZE;
+            end = i + Math.min(docs.length, README_PAGE_SIZE);
           await step.run(`process-documents-${slug}-${start}-${end}`, async () => {
             const page = docs.slice(start, end);
             for (const doc of page) {
