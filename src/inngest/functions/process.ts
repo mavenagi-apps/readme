@@ -1,4 +1,5 @@
 import { inngest } from '@inngest/client';
+import Bottleneck from 'bottleneck';
 import { MavenAGIClient } from 'mavenagi';
 import {
   getProjectBaseUrl,
@@ -10,6 +11,8 @@ import { INNGEST_EVENT } from '@inngest/constants';
 
 // How many documents per Inngest step
 const README_PAGE_SIZE = 15;
+const BOTTLENECK_MAX_CONCURRENT = 16;
+const BOTTLENECK_MIN_TIME = 5;
 
 export const processFunction = inngest.createFunction(
   {
@@ -68,6 +71,10 @@ export const processFunction = inngest.createFunction(
     if (categories.length === 0) {
       console.log('No categories found');
     } else {
+      const limiter = new Bottleneck({
+        maxConcurrent: BOTTLENECK_MAX_CONCURRENT,
+        minTime: BOTTLENECK_MIN_TIME,
+      });
       for (const category of categories) {
         const { slug }: any = category;
         const docs = await step.run(`fetch-category-docs-${slug}`, async () => {
@@ -75,15 +82,20 @@ export const processFunction = inngest.createFunction(
         });
 
         await step.run(`process-documents-${slug}-0-${docs.length}`, async () => {
-          for (const doc of docs) {
-            await processDocumentWithChildren(
-              doc,
-              settings.token,
-              baseProjectUrl,
-              mavenClient,
-              knowledgeBaseId
-            );
-          }
+          await Promise.all(
+            docs.map((doc) => {
+              return limiter.schedule(
+                async () =>
+                  await processDocumentWithChildren(
+                    doc,
+                    settings.token,
+                    baseProjectUrl,
+                    mavenClient,
+                    knowledgeBaseId
+                  )
+              );
+            })
+          );
         });
       }
     }
