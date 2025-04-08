@@ -115,9 +115,9 @@ export async function processDoc(
     return;
   }
   // Categories only return document metadata. For import, we fetch the full doc.
-  const fullReadmeDoc = await callReadmeApi(`/docs/${doc.slug}`, token);
-  const body = fullReadmeDoc.body || fullReadmeDoc.excerpt || '';
-  const apiDoc = convertAPIToMarkdown(fullReadmeDoc.api);
+  const fullDoc = await callReadmeApi(`/docs/${doc.slug}`, token);
+  const body = fullDoc.body || fullDoc.excerpt || '';
+  const apiDoc = convertAPIToMarkdown(fullDoc.api);
   const content = `${body}${apiDoc ? `\n\n${apiDoc}` : ''}`;
 
   if (!content.trim()) {
@@ -126,7 +126,7 @@ export async function processDoc(
   }
 
   await mavenAgi.knowledge.createKnowledgeDocument(knowledgeBaseId, {
-    title: fullReadmeDoc.title,
+    title: fullDoc.title,
     content: content,
     contentType: 'MARKDOWN',
     url: getDocUrlForSlug(baseDocUrl, doc.slug),
