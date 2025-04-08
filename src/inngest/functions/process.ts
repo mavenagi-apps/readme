@@ -1,7 +1,15 @@
 import { inngest } from '@inngest/client';
 import { MavenAGIClient } from 'mavenagi';
-import { getProjectBaseUrl, callReadmeApi, processDocsForCategory } from '@inngest/readme';
+import {
+  getProjectBaseUrl,
+  callReadmeApi,
+  getDocsForCategory,
+  processDocumentWithChildren,
+} from '@inngest/readme';
 import { INNGEST_EVENT } from '@inngest/constants';
+
+// How many documents per Inngest step
+const README_PAGE_SIZE = 50;
 
 export const processFunction = inngest.createFunction(
   {
@@ -53,7 +61,6 @@ export const processFunction = inngest.createFunction(
         hasMorePages = res.length > 0;
         page++;
       }
-      console.log('Processed categories: ', fetchedCategories);
       return fetchedCategories;
     });
 
@@ -62,16 +69,24 @@ export const processFunction = inngest.createFunction(
       throw new Error('No categories found');
     } else {
       for (const category of categories) {
-        await step.run('process-documents', async () => {
-          const { slug }: any = category;
-          await processDocsForCategory(
-            settings.token,
-            baseProjectUrl,
-            slug,
-            mavenClient,
-            knowledgeBaseId
-          );
-        });
+        const { slug }: any = category;
+        const docs = await getDocsForCategory(settings.token, slug);
+        for (let i = 0; i < docs.length; i += README_PAGE_SIZE) {
+          const start = i,
+            end = i + README_PAGE_SIZE;
+          await step.run(`process-documents-${slug}-${start}-${end}`, async () => {
+            const page = docs.slice(start, end);
+            for (const doc of page) {
+              await processDocumentWithChildren(
+                doc,
+                settings.token,
+                baseProjectUrl,
+                mavenClient,
+                knowledgeBaseId
+              );
+            }
+          });
+        }
       }
     }
 

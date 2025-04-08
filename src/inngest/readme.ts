@@ -72,19 +72,10 @@ function convertAPIToMarkdown(api: APITypes.APIDefinition) {
   return `${endpoint}\n\n**PATH PARAMS**\n\n${params}\n\n**BODY PARAMS**\n\n${payloads}\n\n**RESPONSES**\n\n${responses}`;
 }
 
-export async function processDocsForCategory(
-  token: string,
-  baseDocUrl: string,
-  categoryId: string,
-  mavenAgi: MavenAGIClient,
-  knowledgeBaseId: string
-) {
-  const docs = await callReadmeApi(`/categories/${categoryId}/docs`, token);
-  console.log('Processing documents in category:', categoryId);
-
-  for (const document of docs) {
-    await processDocumentWithChildren(document, token, baseDocUrl, mavenAgi, knowledgeBaseId);
-  }
+export async function getDocsForCategory(token: string, categorySlug: string) {
+  const docs = await callReadmeApi(`/categories/${categorySlug}/docs`, token);
+  console.log('Processing documents in category:', categorySlug);
+  return docs;
 }
 
 export async function processDocumentWithChildren(
