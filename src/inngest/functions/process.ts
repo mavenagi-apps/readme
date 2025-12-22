@@ -49,14 +49,10 @@ export const processFunction = inngest.createFunction(
         }
 
         // Validate inputs
-        await step.run("validate-inputs", async () => {
-            await validateInputs(event.data);
-        });
+        await step.run("validate-inputs", () => validateInputs(event.data));
 
-        // Fetch all bucket contents
-        const retrievedMetaData = await step.run("fetch-metadata", async () => {
-            return (await fetchMetaDataAndSetup(event.data)) ?? {};
-        });
+        // Fetch all metadata
+        const retrievedMetaData = await step.run("fetch-metadata", () => fetchMetaDataAndSetup(event.data)) ?? {};
 
         // Initialize state
         // state can contain any data you want to persist between steps
@@ -67,9 +63,7 @@ export const processFunction = inngest.createFunction(
         };
 
         // Create KB values
-        const KBValues = await step.run("create-kb-values", async () => {
-            return createMavenKBIds(event.data, state.metadata);
-        });
+        const KBValues = await step.run("create-kb-values", () => createMavenKBIds(event.data, state.metadata));
 
         // Create the knowledge bases
         await createKnowledgeBaseWithInngest(
