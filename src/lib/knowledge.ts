@@ -6,22 +6,6 @@ import Bottleneck from "bottleneck";
  * Any interface definitions used in knowledge base processing
  */
 
-export interface ReadmeProject {
-  id: string;
-  name: string;
-  subdomain: string;
-  jwt_secret?: string;
-  custom_login?: {
-    jwt_secret: string;
-  };
-  base_url: string;
-  plan: {
-    type: string;
-  };
-  created_at: string;
-  appearance: Record<string, unknown>;
-}
-
 export interface ReadmeCategory {
   title: string;
   section: string;
