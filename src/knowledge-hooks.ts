@@ -24,8 +24,7 @@ export async function fetchMetaDataAndSetup(eventData: ProcessEventData): Promis
         categories,
         defaultBranch,
         currentCategoryIndex: 0,
-        currentDocumentIndex: 0,
-        totalCategories: categories.length
+        currentDocumentIndex: 0
     };
 }
 
