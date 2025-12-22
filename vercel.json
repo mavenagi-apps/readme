@@ -1,0 +1,4 @@
+{
+  "buildCommand": "corepack enable && pnpm run build",
+  "installCommand": "corepack enable && pnpm install"
+}
