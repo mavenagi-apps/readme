@@ -5,8 +5,8 @@ import {ProcessEventData} from "@/inngest/client";
 import {InngestProcessingError} from "@/inngest/inngest-processing-error";
 import {KNOWLEDGE_BASE_ID, KNOWLEDGE_BASE_NAME} from "@/lib/constants";
 import { ConvertChunkResult } from "@/inngest/functions/kb-helpers";
-import { DataSourceRateLimiter, ReadmeCategory } from "@/lib/knowledge";
-import { getCategories, getDocsForCategory, getDocument, getProjectDefaultBranch, getDocUrlForSlug, convertAPIToMarkdown } from "@/lib/utils";
+import { DataSourceRateLimiter } from "@/lib/knowledge";
+import { getCategories, getDocsForCategory, getDocument, getProjectDefaultBranch, convertAPIToMarkdown } from "@/lib/utils";
 
 /*
  * Implement this to fetch metadata about your source
