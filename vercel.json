@@ -1,4 +1,0 @@
-{
-  "buildCommand": "corepack enable && corepack prepare pnpm@10.3.0 --activate && pnpm run build",
-  "installCommand": "corepack enable && corepack prepare pnpm@10.3.0 --activate && pnpm install"
-}
