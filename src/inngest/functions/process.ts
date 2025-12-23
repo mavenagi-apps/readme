@@ -1,107 +1,137 @@
-import { inngest } from '@inngest/client';
-import Bottleneck from 'bottleneck';
-import { MavenAGIClient } from 'mavenagi';
+import {inngest, ProcessEventData} from "@/inngest/client";
+import {onFailure} from "@/inngest/functions/on-failure";
 import {
-  getProjectBaseUrl,
-  callReadmeApi,
-  getDocsForCategory,
-  processDocument,
-} from '@inngest/readme';
-import { INNGEST_EVENT } from '@inngest/constants';
+    fetchMetaDataAndSetup,
+    fetchData,
+    convertToMavenDocuments,
+    createMavenKBIds,
+    validateInputs,
+    getMavenKBId
+} from "@/knowledge-hooks";
+import { AppSettingsSchema } from "@/settings";
+import {
+    createKnowledgeBaseWithInngest,
+    finalizeKnowledgeBaseVersionWithInngest,
+} from "@/inngest/functions/kb-helpers";
+import {MavenAGI, MavenAGIClient} from "mavenagi";
+import {InngestProcessingError} from "@/inngest/inngest-processing-error";
+import Bottleneck from "bottleneck";
+import { eld } from 'eld';
 
-const BOTTLENECK_MAX_CONCURRENT = 16;
-const BOTTLENECK_MIN_TIME = 5;
+const mavenApiLimiter = new Bottleneck({
+    maxConcurrent: Number.parseInt(process.env.MAVEN_API_RATELIMIT ?? '20'),
+    minTime: 200,
+});
 
 export const processFunction = inngest.createFunction(
-  {
-    id: 'process',
-  },
-  {
-    event: INNGEST_EVENT,
-    concurrency: [
-      {
-        key: 'event.data.agentId',
-        limit: 50,
-      },
-    ],
-  },
-  async ({ event, step }) => {
-    const { organizationId, agentId, settings, knowledgeBaseId } = event.data;
-    const mavenClient = new MavenAGIClient({ organizationId, agentId });
-    const baseProjectUrl = await getProjectBaseUrl(settings.token);
+    {
+        id: "process",
+        onFailure: onFailure,
+    },
+    {
+        event: `app/${process.env.MAVENAGI_APP_ID}/process`,
+        concurrency: [
+            {
+                key: "event.data.agentId",
+                limit: parseInt(process.env.CONCURRENT_EXECUTIONS || '50')
+            }
+        ],
+        retries: parseInt(process.env.MAX_RETRIES || '10'),
+    },
+    async ({ event, step }) => {
+        const { organizationId, agentId, settings } = event.data;
 
-    // Just in case we had a past failure, finalize any old versions so we can start from scratch
-    // TODO(maven): Make the platform more lenient so this isn't necessary
-    await step.run('finalize-knowledge-base-version', async () => {
-      try {
-        await mavenClient.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId);
-      } catch (error) {
-        // Ignored
-      }
-    });
+        // Validate settings schema
+        const validationResult = AppSettingsSchema.safeParse(settings);
+        if (!validationResult.success) {
+            console.error("Invalid settings:", validationResult.error.format());
+            throw new InngestProcessingError(`Settings validation failed: ${validationResult.error.message}`, []);
+        }
 
-    // Make a new kb version
-    await step.run('create-knowledge-base-version', async () => {
-      await mavenClient.knowledge.createKnowledgeBaseVersion(knowledgeBaseId, {
-        type: 'FULL',
-      });
-    });
+        // Validate inputs
+        await step.run("validate-inputs", () => validateInputs(event.data));
 
-    // Fetch and save all readme articles to the kb
-    // Readme only allows fetching docs from within a category so we loop over each one
-    const categories = await step.run('process-categories', async () => {
-      let page = 1;
-      let hasMorePages = true;
-      let fetchedCategories = [];
+        // Fetch all metadata
+        const retrievedMetaData = await step.run("fetch-metadata", () => fetchMetaDataAndSetup(event.data)) ?? {};
 
-      while (hasMorePages) {
-        console.log('Fetching categories page', page);
-        const res: [] = await callReadmeApi(`/categories?perPage=100&page=${page}`, settings.token);
-        fetchedCategories.push(...res);
-        console.log('Categories: ', fetchedCategories);
-        hasMorePages = res.length > 0;
-        page++;
-      }
-      return fetchedCategories;
-    });
+        // Initialize state
+        // state can contain any data you want to persist between steps
+        // can be useful for reporting back counts, when this becomes available
+        const state = {
+            metadata: retrievedMetaData,
+            numProcessed: 0
+        };
 
-    // Process each category
-    if (categories.length === 0) {
-      console.log('No categories found');
-    } else {
-      const limiter = new Bottleneck({
-        maxConcurrent: BOTTLENECK_MAX_CONCURRENT,
-        minTime: BOTTLENECK_MIN_TIME,
-      });
-      for (const category of categories) {
-        const { slug }: any = category;
-        const docs = await step.run(`fetch-category-docs-${slug}`, async () => {
-          return await getDocsForCategory(settings.token, slug);
-        });
+        // Create KB values
+        const KBValues = await step.run("create-kb-values", () => createMavenKBIds(event.data, state.metadata));
 
-        await step.run(`process-documents-${slug}-0-${docs.length}`, async () => {
-          await Promise.all(
-            docs.map((doc) => {
-              return limiter.schedule(
-                async () =>
-                  await processDocument(
-                    doc,
-                    settings.token,
-                    baseProjectUrl,
-                    mavenClient,
-                    knowledgeBaseId
-                  )
-              );
-            })
-          );
-        });
-      }
+        // Create the knowledge bases
+        await createKnowledgeBaseWithInngest(
+            organizationId,
+            agentId,
+            KBValues,
+            undefined,
+            step
+        );
+
+        let chunkIndex = 0;
+        while (true) {
+
+            const { localMetadata, numDocuments } = await step.run(`process-chunk-${chunkIndex}`, async () => {
+                let localMetadata = state.metadata;
+
+                const fetchDataResult = await fetchData(localMetadata, event.data as ProcessEventData, parseInt(process.env.DEFAULT_CHUNK_SIZE || '50'));
+                localMetadata = fetchDataResult.updatedMetadata ?? localMetadata;
+
+                console.info(`Fetched ${fetchDataResult.result.length} records in chunk ${chunkIndex + 1}`);
+
+                const convertResult = await convertToMavenDocuments(fetchDataResult.result, event.data, localMetadata);
+                localMetadata = convertResult.updatedMetadata ?? localMetadata;
+
+                console.info(`Converted ${convertResult.documents.length} documents in chunk ${chunkIndex + 1}`);
+
+                const client = new MavenAGIClient({ organizationId, agentId });
+                await Promise.all((convertResult.documents as MavenAGI.KnowledgeDocumentRequest[]).map(doc => {
+                    return mavenApiLimiter.schedule(async () => {
+                        const kbId = getMavenKBId(event.data, state.metadata, doc);
+                        if (!kbId) {
+                            console.log(`No KB ID value found for document ${doc.knowledgeDocumentId.referenceId}, skipping`);
+                            return;
+                        }
+                        if(!doc.language && doc.content) {
+                            const utf8Content = Buffer.from(doc.content, 'utf8').toString('utf8');
+                            const detectedLanguage = eld.detect(utf8Content).language;
+                            doc.language = detectedLanguage || 'en';
+                        }
+                        try {
+                            await client.knowledge.createKnowledgeDocument(kbId, doc);
+                        } catch (error) {
+                            console.log(`Failed to save document ${doc.knowledgeDocumentId.referenceId}: ${error instanceof Error ? error.message : String(error)}`);
+                        }
+                    });
+                }));
+
+                console.info(`Created ${convertResult.documents.length} Maven documents in chunk ${chunkIndex + 1}`);
+
+                return { localMetadata, numDocuments: fetchDataResult.result.length };
+            });
+
+            if(numDocuments === 0) {
+                // we are done
+                break;
+            }
+
+            state.metadata = localMetadata;
+            state.numProcessed += numDocuments;
+            chunkIndex++;
+        }
+
+        await finalizeKnowledgeBaseVersionWithInngest(
+            organizationId,
+            agentId,
+            KBValues,
+            undefined,
+            step
+        );
     }
-
-    // Finalize the version
-    await step.run('finalize-knowledge-base-version-final', async () => {
-      console.log('Finished processing all articles');
-      await mavenClient.knowledge.finalizeKnowledgeBaseVersion(knowledgeBaseId);
-    });
-  }
 );

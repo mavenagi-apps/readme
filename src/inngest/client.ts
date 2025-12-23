@@ -1,22 +1,22 @@
-import { EventSchemas, Inngest } from 'inngest';
-import { z } from 'zod';
+import { EventSchemas, Inngest } from "inngest";
+import { z } from "zod";
+import {AppSettingsSchema} from "@/settings";
 
-// TODO: Should we set this in an env variable or compute it from the appId?
-// const INNGEST_ID = "app/readme-develop";
-const INNGEST_ID = 'app/readme';
+
+export const processEventDataSchema = z.object({
+    organizationId: z.string(),
+    agentId: z.string(),
+    knowledgeBaseId: z.string().optional(),
+    settings: AppSettingsSchema,
+});
+
+export type ProcessEventData = z.infer<typeof processEventDataSchema>;
 
 export const inngest = new Inngest({
-  id: INNGEST_ID,
+  id: `app/${process.env.MAVENAGI_APP_ID}`,
   schemas: new EventSchemas().fromZod({
-    [`${INNGEST_ID}/process`]: {
-      data: z.object({
-        organizationId: z.string(),
-        agentId: z.string(),
-        settings: z.object({
-          token: z.string(),
-        }),
-        knowledgeBaseId: z.string(),
-      }),
+      [`app/${process.env.MAVENAGI_APP_ID}/process`]: {
+          data: processEventDataSchema,
     },
   }),
 });

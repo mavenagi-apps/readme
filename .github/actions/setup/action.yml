@@ -1,0 +1,54 @@
+name: setup
+description: Shared setup for Node.js with pnpm
+
+inputs:
+  node-version-file:
+    description: Path to .nvmrc file
+    required: true
+
+runs:
+  using: 'composite'
+
+  steps:
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version-file: ${{ inputs.node-version-file }}
+        registry-url: 'https://registry.npmjs.org'
+      env:
+        NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
+
+    - name: Configure npm registry
+      shell: bash
+      run: |
+        echo "Registry config:"
+        echo "//registry.npmjs.org/:_authToken=${{ env.NPM_TOKEN }}" > ~/.npmrc
+        echo "@mavenagi:registry=https://registry.npmjs.org/" >> ~/.npmrc
+        echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
+        cat ~/.npmrc
+        echo "Testing auth:"
+        npm whoami --registry=https://registry.npmjs.org || echo "Auth failed"
+
+    - name: Install dependencies using pnpm
+      shell: bash
+      run: |
+        echo "Using registry: $(pnpm config get registry)"
+        pnpm config set registry https://registry.npmjs.org
+        echo "Installing with NPM_TOKEN: $([ -n '${{ env.NPM_TOKEN }}' ] && echo 'present' || echo 'missing')"
+        pnpm install
+
+    - name: Install Vercel CLI
+      shell: bash
+      run: pnpm install --global vercel@latest
+
+    # - name: Cache
+    #   uses: actions/cache/save@v4
+    #   id: cache
+    # with:
+    #   path: ~/setup-pnpm
+    #   key: pnpm
