@@ -23,7 +23,7 @@
     "@vercel/functions": "1.4.0",
     "bottleneck": "^2.19.5",
     "eld": "^1.0.1",
-    "inngest": "^3.31.13",
+    "inngest": "^3.54.0",
     "mavenagi": "1.2.8",
     "next": "15.1.11",
     "react": "18.3.1",
