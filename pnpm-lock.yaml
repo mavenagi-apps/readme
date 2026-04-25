@@ -37,8 +37,8 @@ importers:
         version: 3.25.76
     devDependencies:
       '@inngest/test':
-        specifier: ^1.0.0
-        version: 1.0.0(inngest@3.54.0(@opentelemetry/core@2.7.0(@opentelemetry/api@1.9.1))(next@15.1.11(@babel/core@7.28.5)(@opentelemetry/api@1.9.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.5.3)(zod@3.25.76))
+        specifier: ^0.1.9
+        version: 0.1.9(@opentelemetry/core@2.7.0(@opentelemetry/api@1.9.1))(next@15.1.11(@babel/core@7.28.5)(@opentelemetry/api@1.9.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.5.3)(zod@3.25.76)
       '@types/node':
         specifier: 20.14.11
         version: 20.14.11
@@ -459,10 +459,8 @@ packages:
   '@inngest/ai@0.1.7':
     resolution: {integrity: sha512-5xWatW441jacGf9czKEZdgAmkvoy7GS2tp7X8GSbdGeRXzjisHR6vM+q8DQbv6rqRsmQoCQ5iShh34MguELvUQ==}
 
-  '@inngest/test@1.0.0':
-    resolution: {integrity: sha512-T3K6w0o/AHk34zzYhh1lC183ziQUCTEmY+G7ZOFwR5q4vXkbmZpXzbRecuG+Om/mixJnJCjZbt43e6OMR3QAnQ==}
-    peerDependencies:
-      inngest: ^4.0.0
+  '@inngest/test@0.1.9':
+    resolution: {integrity: sha512-yyDnXSZnkJYAi4BJU5YqDEnuFzeufgGcZkdGtQHyKEfHAsIvGBuBavP0AwKavj5XogmB1f5RavkagUAloD8k1w==}
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -3463,11 +3461,26 @@ snapshots:
       '@types/node': 22.13.9
       typescript: 5.8.2
 
-  '@inngest/test@1.0.0(inngest@3.54.0(@opentelemetry/core@2.7.0(@opentelemetry/api@1.9.1))(next@15.1.11(@babel/core@7.28.5)(@opentelemetry/api@1.9.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.5.3)(zod@3.25.76))':
+  '@inngest/test@0.1.9(@opentelemetry/core@2.7.0(@opentelemetry/api@1.9.1))(next@15.1.11(@babel/core@7.28.5)(@opentelemetry/api@1.9.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.5.3)(zod@3.25.76)':
     dependencies:
       inngest: 3.54.0(@opentelemetry/core@2.7.0(@opentelemetry/api@1.9.1))(next@15.1.11(@babel/core@7.28.5)(@opentelemetry/api@1.9.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.5.3)(zod@3.25.76)
       tinyspy: 3.0.2
       ulid: 2.3.0
+    transitivePeerDependencies:
+      - '@opentelemetry/core'
+      - '@sveltejs/kit'
+      - '@vercel/node'
+      - aws-lambda
+      - encoding
+      - express
+      - fastify
+      - h3
+      - hono
+      - koa
+      - next
+      - supports-color
+      - typescript
+      - zod
 
   '@isaacs/cliui@8.0.2':
     dependencies:

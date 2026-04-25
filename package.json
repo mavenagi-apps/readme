@@ -31,7 +31,7 @@
     "zod": "^3.25.0"
   },
   "devDependencies": {
-    "@inngest/test": "^1.0.0",
+    "@inngest/test": "^0.1.9",
     "@types/node": "20.14.11",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
