@@ -1,6 +1,6 @@
 import { MavenAGI, MavenAGIClient } from 'mavenagi';
 import { InngestProcessingError } from '../inngest-processing-error';
-import { createStepTools } from 'inngest/components/InngestStepTools';
+import type { GetStepTools, Inngest } from 'inngest';
 
 
 export type KBValues = {
@@ -27,7 +27,7 @@ export async function finalizeKnowledgeBaseVersionWithInngest(
   agentId: string,
   kbs: KBValues[],
   knowledgeBaseId: string | undefined,
-  step: ReturnType<typeof createStepTools>
+  step: GetStepTools<Inngest.Any>
 ) {
   const client = new MavenAGIClient({organizationId, agentId});
   const kbsToFinalize = kbs.filter(
@@ -84,7 +84,7 @@ export async function createKnowledgeBaseWithInngest(
   agentId: string,
   kbs: KBValues[],
   knowledgeBaseId: string | undefined,
-  step: ReturnType<typeof createStepTools>
+  step: GetStepTools<Inngest.Any>
 ) {
   const client = new MavenAGIClient({organizationId, agentId});
   // Create knowledge base values
