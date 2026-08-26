@@ -1,0 +1,43 @@
+# Publishes this app's manifest via the org reusable workflow (mavenagi-apps/.github) — to the app
+# directory and developers-service.
+#
+# Runs on every branch: the reusable publishes whichever targets name the pushed branch, so a branch
+# list here would be a second gate that can silently disagree with src/manifest.ts. A branch no
+# target names logs `Nothing to publish` and succeeds. Only `main` declares a branch today, so it is
+# the only branch that publishes — a push to `develop` is a no-op run.
+#
+# There is no `src/lib/actions` trigger because this app registers no actions — it is a knowledge
+# connector, and its only published surfaces are the metadata and settings schema in the manifest.
+name: Publish App Manifest
+
+# The reusable inherits the caller's scope; the repo default is write.
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - src/manifest.ts
+      - .github/workflows/publish-manifest.yml
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Load + transform but do NOT publish
+        type: boolean
+        default: true
+      target:
+        description: Manifest target key to publish. Leave blank to select by branch.
+        type: string
+        required: false
+
+jobs:
+  publish-manifest:
+    uses: mavenagi-apps/.github/.github/workflows/publish-manifest.yml@main
+    with:
+      dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs['dry-run'] || false }}
+      target: ${{ github.event_name == 'workflow_dispatch' && inputs.target || '' }}
+    secrets:
+      INTERNAL_ASSETS_BYPASS_TOKEN: ${{ secrets.INTERNAL_ASSETS_BYPASS_TOKEN }}
+      MAVEN_HELPER_APP_SECRET: ${{ secrets.MAVEN_HELPER_APP_SECRET }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

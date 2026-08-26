@@ -1,0 +1,15 @@
+# Supply chain security — delay installing newly published versions.
+# 20160 minutes = 14 days. Without this, pnpm 11 applies only its 1-day default,
+# which is far short of the window supply-chain attacks actually use.
+minimumReleaseAge: 20160
+
+# Internal first-party packages are trusted at every published version, so pnpm's
+# supply-chain cooldown must not delay them — a just-published apps-core release
+# would otherwise fail `pnpm install --frozen-lockfile` for a day (pnpm 11's
+# default) or 14 days (where minimumReleaseAge is set).
+#
+# Third-party exceptions must ALWAYS use exact version pins with a justification.
+# A bare third-party name bypasses the gate for all its future versions.
+minimumReleaseAgeExclude:
+  - "@mavenagi/*" # internal packages must not be delayed after publish
+  - mavenagi # unscoped internal SDK — same rationale as @mavenagi/*

@@ -42,3 +42,6 @@ next-env.d.ts
 
 .idea
 node_modules/
+
+# mavenagi-manifest generate writes here; it is a build artifact
+generated/
