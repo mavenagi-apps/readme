@@ -20,7 +20,7 @@
     "test:vitest:coverage": "vitest run --coverage.enabled --coverage.reporter='text-summary'"
   },
   "dependencies": {
-    "@vercel/functions": "1.4.0",
+    "@vercel/functions": "3.3.4",
     "bottleneck": "^2.19.5",
     "eld": "^1.0.1",
     "inngest": "^3.54.0",
