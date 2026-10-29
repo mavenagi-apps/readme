@@ -25,7 +25,7 @@
     "eld": "^1.0.1",
     "inngest": "^3.54.0",
     "mavenagi": "1.2.8",
-    "next": "15.1.11",
+    "next": "15.5.28",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "zod": "^3.25.0"
@@ -46,8 +46,8 @@
     "vitest": "^2.1.5"
   },
   "engines": {
-    "node": "^22.11.0",
-    "pnpm": ">=10.3.0"
+    "node": ">=24.0.0",
+    "pnpm": ">=12.0.0"
   },
-  "packageManager": "pnpm@10.34.9"
+  "packageManager": "pnpm@12.13.0+sha512.1e55719bf26e809dce5c5084fdebaa64efb3da9038ae5d68a9f8a68311f1a45841c8c3b76a37298c3b66f6bcc80409a9b7f33c78a7168a3e90fb65a5d8235ae4"
 }
