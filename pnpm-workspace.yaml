@@ -28,3 +28,7 @@ allowBuilds:
   esbuild: false # vitest's transformer; the platform binary ships as an optional dependency
   protobufjs: false # only regenerates bundled descriptors
   unrs-resolver: false # eslint import resolver; the native binding ships as an optional dependency
+
+# Keep pnpm-lock.yaml a single YAML document. GitHub's dependency graph reads only the first one,
+# and pnpm 12 otherwise writes its own binaries there, hiding every dependency from Dependabot.
+pmOnFail: ignore
